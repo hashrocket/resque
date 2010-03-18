@@ -1,20 +1,28 @@
 # Inspired by rabbitmq.rake the Redbox project at http://github.com/rick/redbox/tree/master
 require 'fileutils'
 require 'open-uri'
+require 'pathname'
 
 class RedisRunner
 
-  def self.redisdir
-    "/tmp/redis/"
+  def self.redis_dir
+    @redis_dir ||= if ENV['PREFIX']
+                     Pathname.new(ENV['PREFIX'])
+                   else
+                     Pathname.new(`which redis-server`) + '..' + '..'
+                   end
   end
 
-  def self.redisconfdir
-    server_dir = File.dirname(`which redis-server`)
-    conf_file = "#{server_dir}/../etc/redis.conf"
-    unless File.exists? conf_file
-      conf_file = "#{server_dir}/../../etc/redis.conf"
-    end
-    conf_file
+  def self.bin_dir
+    redis_dir + 'bin'
+  end
+
+  def self.config
+    @config ||= if File.exists?(redis_dir + 'etc/redis.conf')
+                  redis_dir + 'etc/redis.conf'
+                else
+                  redis_dir + '../etc/redis.conf'
+                end
   end
 
   def self.dtach_socket
@@ -29,12 +37,12 @@ class RedisRunner
   def self.start
     puts 'Detach with Ctrl+\  Re-attach with rake redis:attach'
     sleep 1
-    command = "dtach -A #{dtach_socket} redis-server #{redisconfdir}"
+    command = "#{bin_dir}/dtach -A #{dtach_socket} #{bin_dir}/redis-server #{config}"
     sh command
   end
 
   def self.attach
-    exec "dtach -a #{dtach_socket}"
+    exec "#{bin_dir}/dtach -a #{dtach_socket}"
   end
 
   def self.stop
@@ -75,6 +83,7 @@ namespace :redis do
   task :install => [:about, :download, :make] do
     bin_dir = '/usr/bin'
     conf_dir = '/etc'
+
     if ENV['PREFIX']
       bin_dir = "#{ENV['PREFIX']}/bin"
       sh "mkdir -p #{bin_dir}" unless File.exists?("#{bin_dir}")
@@ -96,15 +105,15 @@ namespace :redis do
   end
 
   task :make do
-    sh "cd #{RedisRunner.redisdir} && make clean"
-    sh "cd #{RedisRunner.redisdir} && make"
+    sh "cd /tmp/redis && make clean"
+    sh "cd /tmp/redis && make"
   end
 
   desc "Download package"
   task :download do
-    sh 'rm -rf /tmp/redis/' if File.exists?("#{RedisRunner.redisdir}/.svn")
-    sh 'git clone git://github.com/antirez/redis.git /tmp/redis' unless File.exists?(RedisRunner.redisdir)
-    sh "cd #{RedisRunner.redisdir} && git pull" if File.exists?("#{RedisRunner.redisdir}/.git")
+    sh 'rm -rf /tmp/redis/' if File.exists?("/tmp/redis/.svn")
+    sh 'git clone git://github.com/antirez/redis.git /tmp/redis' unless File.exists?('/tmp/redis')
+    sh "cd /tmp/redis && git pull" if File.exists?("/tmp/redis/.git")
   end
 
 end
