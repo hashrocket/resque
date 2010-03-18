@@ -73,16 +73,23 @@ namespace :redis do
 
   desc 'Install the latest verison of Redis from Github (requires git, duh)'
   task :install => [:about, :download, :make] do
-    ENV['PREFIX'] and bin_dir = "#{ENV['PREFIX']}/bin" or bin_dir = '/usr/bin'
+    bin_dir = '/usr/bin'
+    conf_dir = '/etc'
+    if ENV['PREFIX']
+      bin_dir = "#{ENV['PREFIX']}/bin"
+      sh "mkdir -p #{bin_dir}" unless File.exists?("#{bin_dir}")
+
+      conf_dir = "#{ENV['PREFIX']}/etc"
+      sh "mkdir -p #{conf_dir}" unless File.exists?("#{conf_dir}")
+    end
+
     %w(redis-benchmark redis-cli redis-server).each do |bin|
       sh "cp /tmp/redis/#{bin} #{bin_dir}"
     end
 
     puts "Installed redis-benchmark, redis-cli and redis-server to #{bin_dir}"
 
-    ENV['PREFIX'] and conf_dir = "#{ENV['PREFIX']}/etc" or conf_dir = '/etc'
     unless File.exists?("#{conf_dir}/redis.conf")
-      sh "mkdir #{conf_dir}" unless File.exists?("#{conf_dir}")
       sh "cp /tmp/redis/redis.conf #{conf_dir}/redis.conf"
       puts "Installed redis.conf to #{conf_dir} \n You should look at this file!"
     end
