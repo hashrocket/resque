@@ -117,9 +117,24 @@ namespace :dtach do
   end
 
   desc 'Install dtach 0.8 from source'
-  task :install => [:about] do
+  task :install => [:about, :download, :make] do
 
-    Dir.chdir('/tmp/')
+    bin_dir = "/usr/bin"
+
+    if ENV['PREFIX']
+      bin_dir = "#{ENV['PREFIX']}/bin"
+      sh "mkdir -p #{bin_dir}" unless File.exists?("#{bin_dir}")
+    end
+
+    sh "cp /tmp/dtach-0.8/dtach #{bin_dir}"
+  end
+
+  task :make do
+    sh 'cd /tmp/dtach-0.8/ && ./configure && make'
+  end
+
+  desc "Download package"
+  task :download do
     unless File.exists?('/tmp/dtach-0.8.tar.gz')
       require 'net/http'
 
@@ -128,15 +143,8 @@ namespace :dtach do
     end
 
     unless File.directory?('/tmp/dtach-0.8')
-      system('tar xzf dtach-0.8.tar.gz')
+      sh 'cd /tmp && tar xzf dtach-0.8.tar.gz'
     end
-
-    ENV['PREFIX'] and bin_dir = "#{ENV['PREFIX']}/bin" or bin_dir = "/usr/bin"
-    Dir.chdir('/tmp/dtach-0.8/')
-    sh 'cd /tmp/dtach-0.8/ && ./configure && make'
-    sh "cp /tmp/dtach-0.8/dtach #{bin_dir}"
-
-    puts "Dtach successfully installed to #{bin_dir}"
   end
 end
 
