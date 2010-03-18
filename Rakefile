@@ -30,7 +30,7 @@ begin
   require 'resque/version'
 
   Jeweler::Tasks.new do |gemspec|
-    gemspec.name = "resque"
+    gemspec.name = "hashrocket-resque"
     gemspec.summary = ""
     gemspec.description = ""
     gemspec.email = "chris@ozmm.org"
